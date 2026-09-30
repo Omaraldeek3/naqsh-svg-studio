@@ -1,0 +1,16 @@
+NAQSH — CONTRIBUTING
+
+Original SVG assets: CC0 1.0. Application code: MIT.
+
+1. Install Node.js 24 or later and run npm ci, then npm run dev.
+2. Asset metadata lives in src/lib/catalog.ts. Add Arabic and English names,
+   searchable tags, category, palette, and correct authorship/license.
+3. Parameterized SVG recipes live in src/lib/svg.ts. Use local paths and shapes.
+   Do not include scripts, external images, fonts, or external references.
+4. Keep every asset original. Imported third-party assets require an explicit
+   license permitting redistribution and must be tracked separately.
+5. Run npm test, npm run typecheck, npm run test:e2e and npm run build.
+6. Review desktop and mobile layouts and keep Arabic connected and readable.
+7. Submit focused pull requests with a preview and a clear description.
+
+All drafts and favorites are stored in the browser. Export project JSON for backup.

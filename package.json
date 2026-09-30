@@ -1,0 +1,29 @@
+{
+  "name": "naqsh-svg-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3015",
+    "build": "next build",
+    "start": "node scripts/serve.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/core.test.ts",
+    "test:e2e": "playwright test",
+    "export:assets": "node --experimental-strip-types scripts/export-assets.ts",
+    "import:icons": "node --experimental-strip-types scripts/import-icons.ts"
+  },
+  "dependencies": {
+    "@fontsource/tajawal": "5.3.0",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "snapshot": "43130404cc0c8be8d2d371492d806fa940852f5c",
+  "collections": [
+    {
+      "prefix": "tabler",
+      "name": "Tabler Icons",
+      "author": "Paweł Kuna",
+      "license": "MIT",
+      "url": "https://github.com/tabler/tabler-icons",
+      "count": 6198,
+      "version": "3.48.0",
+      "sha256": "0dcb6cdd389ef8481f1e0215178050d7ecbadbee9f4f25efb7add7e4643670f1"
+    },
+    {
+      "prefix": "mdi",
+      "name": "Material Design Icons",
+      "author": "Pictogrammers",
+      "license": "Apache-2.0",
+      "url": "https://github.com/Templarian/MaterialDesign",
+      "count": 7430,
+      "version": "snapshot",
+      "sha256": "cf9b89dda466f1c384af19d3c7bf835c3c1e75eccf313f7821ac48c14f2c8c7b"
+    }
+  ]
+}
