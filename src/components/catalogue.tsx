@@ -1,0 +1,58 @@
+"use client";
+import {useDeferredValue,useEffect,useRef,useState} from "react";
+import {Icon} from "./icon";
+// Shared Naqsh/Shakl catalogue: open-licence SVG files on R2, searched through the catalogue API.
+const API=process.env.NEXT_PUBLIC_CATALOGUE_API||"https://catalogue.omardeek.tech";
+type Category={id:string;ar:string;en:string};
+type Hit={id:string;title_en:string;title_ar:string|null;category:string|null;variant_count:number;laser_ready:boolean;thumb_url:string};
+type Result={total:number;page:number;pageSize:number;products:Hit[];categories:{category:string;n:number}[]};
+type FileRow={sha256:string;title_en:string;author:string|null;license:string;source:string;source_url:string;tags_ar:string[];tags_en:string[];colors:number;paths:number;has_gradient:boolean;has_raster:boolean;has_text:boolean;laser_ready:boolean;complexity:string;size_bytes:number;file_url:string;thumb_url:string;download_url:string};
+type Product={id:string;title_en:string;title_ar:string|null;category:string|null;files:FileRow[]};
+const complexityNames:Record<string,string>={simple:"بسيط",medium:"متوسط",complex:"معقّد"};
+async function get<T>(path:string,signal?:AbortSignal):Promise<T>{const r=await fetch(`${API}${path}`,{signal});if(!r.ok)throw new Error("تعذّر الوصول إلى مكتبة الملفات");return r.json();}
+// The main library search also looks in the cutting files, so one search box finds everything.
+// With library hits it is a strip above them; with none it takes their place, else shows `fallback`.
+export function CatalogueMatches({query,onShow,fallback}:{query:string;onShow:()=>void;fallback?:React.ReactNode}){
+  const [hits,setHits]=useState<Result|null>(null),q=query.trim();
+  useEffect(()=>{setHits(null);if(!q)return;const c=new AbortController(),t=setTimeout(()=>get<Result>(`/api/search?${new URLSearchParams({q})}`,c.signal).then(setHits).catch(()=>{}),250);return()=>{clearTimeout(t);c.abort();};},[q]);
+  if(!q||!hits)return fallback?<>{q&&!hits?null:fallback}</>:null;
+  if(!hits.total)return fallback?<>{fallback}</>:null;
+  return <section className={`catalogue-matches ${fallback?"is-main":""}`} aria-label="نتائج من ملفات القص"><div className="catalogue-matches-head"><span><strong>{hits.total.toLocaleString("en-US")}</strong> تصميمًا في ملفات القص للبحث «{q}»</span><button className="secondary-button" onClick={onShow}>عرض الكل في ملفات القص <Icon name="arrow" size={15}/></button></div><div className="catalogue-thumbs">{hits.products.slice(0,fallback?12:8).map(p=><button key={p.id} title={p.title_ar||p.title_en} aria-label={`عرض ${p.title_ar||p.title_en} في ملفات القص`} onClick={onShow}><img src={p.thumb_url} alt="" loading="lazy"/></button>)}</div></section>;
+}
+export function CatalogueLibrary({notify,initialQuery=""}:{notify:(message:string)=>void;initialQuery?:string}){
+  const [query,setQuery]=useState(initialQuery),[category,setCategory]=useState(""),[laser,setLaser]=useState(false),[colors,setColors]=useState(""),[complexity,setComplexity]=useState(""),[page,setPage]=useState(1),[result,setResult]=useState<Result|null>(null),[cats,setCats]=useState<Category[]>([]),[loading,setLoading]=useState(true),[failed,setFailed]=useState(false),[open,setOpen]=useState<string|null>(null);
+  const deferredQuery=useDeferredValue(query);
+  useEffect(()=>{get<Category[]>("/api/categories").then(setCats).catch(()=>{});},[]);
+  useEffect(()=>{setPage(1);},[deferredQuery,category,laser,colors,complexity]);
+  useEffect(()=>{const c=new AbortController(),params=new URLSearchParams({q:deferredQuery,page:String(page)});if(category)params.set("category",category);if(laser)params.set("laser","1");if(colors)params.set("colors",colors);if(complexity)params.set("complexity",complexity);setLoading(true);const t=setTimeout(()=>get<Result>(`/api/search?${params}`,c.signal).then(r=>{setResult(r);setFailed(false);}).catch(e=>{if(e.name!=="AbortError")setFailed(true);}).finally(()=>{if(!c.signal.aborted)setLoading(false);}),deferredQuery?220:0);return()=>{clearTimeout(t);c.abort();};},[deferredQuery,category,laser,colors,complexity,page]);
+  const catName=(id:string|null)=>cats.find(c=>c.id===id)?.ar??"";
+  const counts=Object.fromEntries((result?.categories??[]).map(c=>[c.category,c.n])),countAll=(result?.categories??[]).reduce((s,c)=>s+c.n,0),pageCount=result?Math.max(1,Math.ceil(result.total/result.pageSize)):1;
+  const reset=()=>{setQuery("");setCategory("");setLaser(false);setColors("");setComplexity("");};
+  return <>
+    <div className="page-heading"><div><div className="eyebrow"><span className="status-dot"/>ملفات SVG بتراخيص مفتوحة · CC0</div><h1>ملفات جاهزة للقص</h1><p>رسومات متجهية للقص بالليزر والطباعة. النسخ المتشابهة مجموعة في تصميم واحد، اختر منها ما يناسبك.</p></div></div>
+    <div className="library-toolbar"><div className="search-box"><Icon name="search" size={19}/><input aria-label="البحث في ملفات القص" placeholder="ابحث بالعربي أو الإنجليزي: غزال، جمل، إطار، mandala…" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button className="icon-button" aria-label="مسح البحث" onClick={()=>setQuery("")}><Icon name="close" size={16}/></button>}</div><div className="toolbar-selects"><select aria-label="جاهزية القص" value={laser?"1":""} onChange={e=>setLaser(e.target.value==="1")}><option value="">كل الملفات</option><option value="1">جاهز للقص فقط</option></select><select aria-label="عدد الألوان" value={colors} onChange={e=>setColors(e.target.value)}><option value="">كل الألوان</option><option value="one">لون واحد</option><option value="two">لونان</option><option value="many">أكثر من لونين</option></select><select aria-label="درجة التعقيد" value={complexity} onChange={e=>setComplexity(e.target.value)}><option value="">كل الدرجات</option>{Object.entries(complexityNames).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></div></div>
+    <div className="category-chips" aria-label="تصفية التصنيف"><button className={`chip ${category===""?"active":""}`} onClick={()=>setCategory("")}>الكل <small>{countAll.toLocaleString("en-US")}</small></button>{cats.filter(c=>counts[c.id]||c.id===category).map(c=><button key={c.id} className={`chip ${category===c.id?"active":""}`} onClick={()=>setCategory(c.id)}>{c.ar} <small>{(counts[c.id]??0).toLocaleString("en-US")}</small></button>)}</div>
+    <div className="results-line"><span><strong>{(result?.total??0).toLocaleString("en-US")}</strong> تصميمًا {query?`للبحث «${query}»`:"في المكتبة"}{loading&&<span className="catalogue-loading"> · جارٍ البحث…</span>}</span><span className="free-label">من Openclipart · CC0</span></div>
+    {failed&&!result?<div className="empty-state"><span className="empty-icon"><Icon name="info" size={36}/></span><h2>تعذّر الوصول إلى مكتبة الملفات</h2><p>تحقّق من اتصالك ثم أعد المحاولة.</p></div>:result&&result.products.length?<><div className="asset-grid catalogue-grid">{result.products.map(p=><article className="asset-card" key={p.id}><div className="card-visual catalogue-visual"><button className="art-button" onClick={()=>setOpen(p.id)} aria-label={`فتح ${p.title_ar||p.title_en}`}><img src={p.thumb_url} alt="" loading="lazy" decoding="async"/></button>{p.variant_count>1&&<span className="motion-badge">{p.variant_count} خيارات</span>}{p.laser_ready&&<span className="svg-badge catalogue-laser">جاهز للقص</span>}</div><div className="card-details"><div><button onClick={()=>setOpen(p.id)}><bdi>{p.title_ar||p.title_en}</bdi></button><span>{catName(p.category)}</span></div></div></article>)}</div>{pageCount>1&&<nav className="catalog-pagination" aria-label="صفحات الملفات"><button className="secondary-button" disabled={page<=1} onClick={()=>{setPage(p=>p-1);scrollTo(0,0);}}>السابق</button><label>الصفحة <bdi>{page}</bdi> من <bdi>{pageCount}</bdi></label><button className="secondary-button" disabled={page>=pageCount} onClick={()=>{setPage(p=>p+1);scrollTo(0,0);}}>التالي</button></nav>}</>:!loading&&<div className="empty-state"><span className="empty-icon"><Icon name="search" size={36}/></span><h2>لم نجد ملفًا بهذا الوصف</h2><p>جرّب كلمة أخرى أو أزل بعض المرشّحات.</p><button className="secondary-button" onClick={reset}>عرض كل الملفات</button></div>}
+    {open&&<ProductDialog id={open} catName={catName} onClose={()=>setOpen(null)} onOpen={setOpen} notify={notify}/>}
+  </>;
+}
+function ProductDialog({id,catName,onClose,onOpen,notify}:{id:string;catName:(id:string|null)=>string;onClose:()=>void;onOpen:(id:string)=>void;notify:(message:string)=>void}){
+  const dialog=useRef<HTMLDialogElement>(null),[product,setProduct]=useState<Product|null>(null),[similar,setSimilar]=useState<Hit[]>([]),[chosen,setChosen]=useState(0);
+  useEffect(()=>{dialog.current?.showModal();},[]);
+  useEffect(()=>{const c=new AbortController();setProduct(null);setChosen(0);Promise.all([get<Product>(`/api/product/${id}`,c.signal),get<Hit[]>(`/api/similar/${id}`,c.signal)]).then(([p,s])=>{setProduct(p);setSimilar(s);}).catch(e=>{if(e.name!=="AbortError"){notify(e.message);onClose();}});return()=>c.abort();},[id]);
+  const f=product?.files[chosen],yes=(b:boolean)=>b?"نعم":"لا";
+  return <dialog ref={dialog} className="asset-dialog" aria-labelledby="catalogue-title" onClose={onClose} onClick={e=>{if(e.target===dialog.current)dialog.current.close();}}>
+    {!product||!f?<div className="preview-column"><p className="catalogue-loading">جارٍ التحميل…</p></div>:<div className="customizer-layout">
+      <div className="preview-column"><div className="dialog-heading"><div><div className="eyebrow"><span className="status-dot"/>{catName(product.category)}{product.files.length>1&&` · ${product.files.length} خيارات`}</div><h2 id="catalogue-title"><bdi>{product.title_ar||product.title_en}</bdi></h2></div><button className="icon-button" aria-label="إغلاق" onClick={()=>dialog.current?.close()}><Icon name="close"/></button></div><div className="catalogue-preview"><img src={f.file_url} alt={f.title_en}/></div>
+        {similar.length>0&&<><h3 className="catalogue-subhead">تصاميم مشابهة</h3><div className="catalogue-thumbs">{similar.slice(0,12).map(s=><button key={s.id} title={s.title_ar||s.title_en} aria-label={`فتح ${s.title_ar||s.title_en}`} onClick={()=>onOpen(s.id)}><img src={s.thumb_url} alt="" loading="lazy"/></button>)}</div></>}</div>
+      <div className="customizer-controls">
+        {product.files.length>1&&<div className="control-section"><h3 className="catalogue-subhead">الخيارات</h3><div className="catalogue-thumbs">{product.files.map((x,i)=><button key={x.sha256} aria-pressed={i===chosen} aria-label={`الخيار ${i+1}`} onClick={()=>setChosen(i)}><img src={x.thumb_url} alt=""/></button>)}</div></div>}
+        <div className="control-section"><a className="primary-button full" href={f.download_url} download><Icon name="download" size={17}/>تنزيل SVG</a></div>
+        <div className="control-section"><dl className="catalogue-facts"><dt>جاهز للقص</dt><dd>{yes(f.laser_ready)}</dd><dt>الألوان</dt><dd>{f.colors}</dd><dt>عدد الأشكال</dt><dd>{f.paths.toLocaleString("en-US")}</dd><dt>التعقيد</dt><dd>{complexityNames[f.complexity]??f.complexity}</dd><dt>تدرّجات · صور · نص</dt><dd>{yes(f.has_gradient)} · {yes(f.has_raster)} · {yes(f.has_text)}</dd><dt>الحجم</dt><dd className="ltr">{(f.size_bytes/1024).toFixed(0)} KB</dd></dl></div>
+        <div className="asset-meta"><span className="ltr">{f.license}</span><a href={f.source_url} target="_blank" rel="noreferrer">{f.source}{f.author?` · ${f.author}`:""}</a></div>
+        {(f.tags_ar.length>0||f.tags_en.length>0)&&<div className="category-chips catalogue-tags">{[...f.tags_ar.slice(0,10),...f.tags_en.slice(0,6)].map(t=><span key={t} className="chip"><bdi>{t}</bdi></span>)}</div>}
+      </div>
+    </div>}
+  </dialog>;
+}
