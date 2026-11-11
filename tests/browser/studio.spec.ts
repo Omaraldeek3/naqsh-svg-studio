@@ -164,3 +164,21 @@ test("imported layers isolate gradient IDs and round-trip safe project files",as
   await page.getByLabel("ملف مشروع للاستيراد",{exact:true}).setInputFiles({name:"project.json",mimeType:"application/json",buffer:Buffer.from(json)});await expect(page.locator(".canvas-layer")).toHaveCount(2);
   await page.getByRole("combobox",{name:"صيغة تصدير المشهد",exact:true}).selectOption("png");const image=page.waitForEvent("download");await page.getByRole("button",{name:"تنزيل المشهد",exact:true}).click();const png=await fs.readFile((await(await image).path())!);expect(png.subarray(0,8).toString("hex")).toBe("89504e470d0a1a0a");
 });
+test("design library sections sit beside the ornaments with groups, search and paging",async({page})=>{
+  // The shared catalogue is a network service: answer it here so the test checks Naqsh alone.
+  const png="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+  const asked:string[]=[];
+  await page.route("**/api/covers",route=>route.fulfill({json:[{category:"flowers",n:6331,thumbs:[png]},{category:"frames",n:8095,thumbs:[png]}]}));
+  await page.route("**/api/search?*",route=>{const q=new URL(route.request().url()).searchParams;asked.push(q.toString());const first=(Number(q.get("page")||1)-1)*48;return route.fulfill({json:{total:100,page:Number(q.get("page")||1),pageSize:48,categories:[{category:"flowers",n:60},{category:"frames",n:40}],products:Array.from({length:48},(_,i)=>({id:String(first+i+1),title_en:`Design ${first+i+1}`,title_ar:null,category:q.get("category")||"flowers",variant_count:1,laser_ready:true,thumb_url:png,tags_ar:["وردة"]}))}});});
+  await page.goto("/");
+  const cards=page.getByRole("region",{name:"مكتبة التصاميم"});
+  await expect(cards.locator(".section-card")).toHaveCount(20);await expect(cards.getByRole("button",{name:/زهور ونباتات/})).toContainText("6,331");
+  await page.getByRole("navigation",{name:"تصنيفات مكتبة التصاميم"}).getByRole("button",{name:/زهور ونباتات/}).click();
+  await expect(page.getByRole("heading",{name:"زهور ونباتات",level:1})).toBeVisible();await expect(page.locator(".catalogue-grid .asset-card")).toHaveCount(48);
+  await expect(page.getByRole("navigation",{name:"نطاق المكتبة"}).getByRole("button",{name:"مكتبة التصاميم",exact:true})).toHaveAttribute("aria-pressed","true");
+  await page.getByRole("button",{name:"ورود",exact:true}).click();await expect.poll(()=>asked.at(-1)).toContain("category=flowers");expect(new URLSearchParams(asked.at(-1)).get("q")).toBe("وردة");
+  await page.getByRole("button",{name:"التالي",exact:true}).click();await expect(page.getByText("Design 49",{exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"كل التصنيفات"}).click();await expect(page.getByRole("heading",{name:"مكتبة التصاميم",level:1})).toBeVisible();
+  await page.getByRole("navigation",{name:"أقسام الزخارف"}).getByRole("button",{name:/زخارف نباتية/}).click();
+  await expect(page.getByRole("region",{name:"من مكتبة التصاميم: زهور ونباتات"})).toBeVisible();
+});

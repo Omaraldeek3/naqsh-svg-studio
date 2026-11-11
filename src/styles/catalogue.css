@@ -19,3 +19,25 @@
 .catalogue-matches .catalogue-thumbs{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
 .category-chips .chip small{color:var(--muted);margin-inline-start:4px}
 @media (max-width:760px){.asset-dialog .customizer-layout{grid-template-columns:1fr}.asset-dialog .customizer-controls{border-inline-start:0}}
+/* The design library inside the main library: section cards, a heading per block, group chips. */
+.section-block{margin:0 0 34px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:0 0 16px}
+.section-head h2{font-size:1.375rem;font-weight:800;color:var(--ink)}
+.section-head p{color:var(--muted);font-size:.875rem;margin-top:4px}
+.section-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.section-card{display:flex;flex-direction:column;min-width:0;text-align:start;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;padding:0;transition:border-color .2s,transform .2s}
+.section-card:hover{border-color:var(--green);transform:translateY(-2px)}
+.section-card-art{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:1px;aspect-ratio:4/3;overflow:hidden;background:var(--line);color:var(--muted)}
+.section-card-art>svg{grid-row:1/-1}
+.section-card-art img{width:100%;height:100%;min-height:0;object-fit:contain;background:#fff;padding:8%}
+.section-card-art>svg{grid-column:1/-1;place-self:center}
+.section-card-art:has(>svg){background:var(--tint)}
+.section-card-text{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:10px 12px}
+.section-card-text strong{font-size:.875rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.section-card-text small{font-size:.75rem;color:var(--muted);direction:ltr;font-variant-numeric:tabular-nums}
+.group-chips{padding-top:0}
+.group-chips .chip{border-radius:999px}
+.catalogue-shelf{margin:28px 0 0}
+.catalogue-grid .card-details span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:640px){.section-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.section-head h2{font-size:1.125rem}}
+.chip-back{display:inline-flex;align-items:center;gap:5px;border-style:dashed}
