@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assets,originalAssets,legacyAssets,ornamentAssets,ornamentCategories,importedAssets,categoryCounts, categories, searchAssets,galleryAssets } from "../src/lib/catalog.ts";
+import { assets,originalAssets,legacyAssets,ornamentAssets,ornamentCategories,tiktokAssets,importedAssets,categoryCounts, categories, searchAssets,galleryAssets } from "../src/lib/catalog.ts";
 import {registerSource,iconCollections} from "../src/lib/icon-sources.ts";
 import {readFileSync} from "node:fs";
 import {createHash} from "node:crypto";
@@ -11,15 +11,17 @@ import {insetPolygon} from "../src/lib/geometric-ornaments.ts";
 import { validateProject, newLayer, renderProject, emptyProject } from "../src/lib/project.ts";
 import { namespaceSvg } from "../src/lib/sanitize.ts";
 
-test("catalog retains legacy designs and adds six balanced ornament categories", () => {
+test("catalog retains legacy designs and adds six balanced ornament categories plus tiktok batch", () => {
   assert.equal(legacyAssets.length, 96);
   assert.equal(ornamentAssets.length,384);
-  assert.equal(originalAssets.length, 480);
+  assert.equal(tiktokAssets.length, 12);
+  assert.equal(originalAssets.length, 492);
   assert.ok(assets.length>10000);
   assert.equal(new Set(assets.map(a => a.id)).size, assets.length);
-  assert.equal(categories.length, 18);
+  assert.equal(categories.length, 19);
   for (const category of ornamentCategories) assert.equal(categoryCounts[category.id],["islamic","ornate-borders"].includes(category.id)?96:48);
-  assert.equal(new Set(originalAssets.map(a => renderAsset(a, defaultOptions))).size, 480);
+  assert.equal(categoryCounts.tiktok, 12);
+  assert.equal(new Set(originalAssets.map(a => renderAsset(a, defaultOptions))).size, 492);
 });
 test("ornaments are distinct geometry, not title or palette variants",()=>{
   const bodies=ornamentAssets.map(a=>renderAsset(a,defaultOptions).replace(/<title>[\s\S]*?<\/title>|<desc>[\s\S]*?<\/desc>/g,"").replace(/orn-[\w.-]+/g,"orn-id"));
@@ -29,10 +31,22 @@ test("ornaments are distinct geometry, not title or palette variants",()=>{
 test("default gallery prioritizes ornaments and secondary assets remain discoverable",()=>{
   assert.equal(galleryAssets(assets,"ornaments").length,384);
   assert.ok(galleryAssets(assets,"ornaments").every(a=>a.ornament));
-  assert.equal(galleryAssets(assets,"interface").length,assets.length-384);
+  assert.equal(galleryAssets(assets,"tiktok").length,12);
+  assert.equal(galleryAssets(assets,"interface").length,assets.length-396);
   assert.equal(galleryAssets(assets,"all").length,assets.length);
   assert.equal(searchAssets(galleryAssets(assets,"ornaments"),"زيتون").length,18);
   assert.equal(searchAssets(galleryAssets(assets,"ornaments"),"اسلامية").length,144);
+});
+test("tiktok CNC designs render valid unique SVGs and are discoverable in their scope",()=>{
+  const bodies=tiktokAssets.map(a=>renderAsset(a,defaultOptions).replace(/<title>[\s\S]*?<\/title>|<desc>[\s\S]*?<\/desc>/g,"").replace(/tk-[\w.-]+/g,"tk-id"));
+  assert.equal(new Set(bodies).size,12);
+  assert.equal(searchAssets(assets,"تيك توك").length,12);
+  for(const asset of tiktokAssets){
+    const svg=renderAsset(asset,{...defaultOptions,transparent:true});
+    assert.doesNotMatch(svg,/NaN|Infinity|undefined/);
+    assert.match(svg,/<path|<rect|<circle|<polygon|<line/);
+    assert.doesNotMatch(svg,/<rect x="0" y="0" width="640" height="480"/);
+  }
 });
 test("connected geometric patterns and ribbons export self-contained repeat tiles",()=>{
   assert.equal(geometricAssets.length,96);

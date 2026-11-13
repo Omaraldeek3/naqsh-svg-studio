@@ -1,8 +1,9 @@
 import {iconCollections,iconRows} from "./icon-sources.ts";
 import {ornamentAssets,ornamentCategories,ornamentCategoryIds} from "./ornament-data.ts";
-export {ornamentAssets,ornamentCategories,ornamentCategoryIds};
+import {tiktokAssets,tiktokCategory} from "./tiktok-designs.ts";
+export {ornamentAssets,ornamentCategories,ornamentCategoryIds,tiktokAssets,tiktokCategory};
 export type UtilityCategoryId = "backgrounds" | "patterns" | "illustrations" | "icons" | "dividers" | "states" | "badges" | "charts" | "frames" | "marks" | "motion" | "scenes";
-export type CategoryId = UtilityCategoryId | "islamic" | "arabesque" | "botanical" | "rosettes" | "ornate-frames" | "ornate-borders";
+export type CategoryId = UtilityCategoryId | "islamic" | "arabesque" | "botanical" | "rosettes" | "ornate-frames" | "ornate-borders" | "tiktok";
 export type Asset = { id: string; name: string; english: string; category: CategoryId; variant: number; style: string; tags: string[]; palette: number; author: string; license: "CC0-1.0"|"MIT"|"Apache-2.0"; source?:string; ornament?:boolean; construction?:"network"|"ribbon" };
 export const utilityCategories: { id: UtilityCategoryId; name: string; description: string; icon: string }[] = [
   { id: "backgrounds", name: "خلفيات", description: "مساحة جديدة لأفكارك", icon: "landscape" },
@@ -18,7 +19,7 @@ export const utilityCategories: { id: UtilityCategoryId; name: string; descripti
   { id: "motion", name: "رسوم متحركة", description: "حركة خفيفة للواجهات", icon: "play" },
   { id: "scenes", name: "مشاهد تركيبية", description: "تكوينات لبداية صفحة جميلة", icon: "layers" },
 ];
-export const categories=[...ornamentCategories,...utilityCategories];
+export const categories=[...ornamentCategories,tiktokCategory,...utilityCategories];
 const names: Record<UtilityCategoryId, [string, string][]> = {
   backgrounds: [["موجة هادئة", "Quiet wave"], ["مدارات", "Orbital rings"], ["تلال ناعمة", "Soft hills"], ["هندسة ملونة", "Color geometry"], ["شبكة ضوء", "Light grid"], ["قوس الشمس", "Sun arc"], ["تضاريس", "Contour landscape"], ["قصاصات", "Paper collage"]],
   patterns: [["نجمة شرقية", "Arabesque star"], ["أقواس متكررة", "Repeating arches"], ["نسيج نقطي", "Dot weave"], ["خطوط متموجة", "Wave lines"], ["بلاطات", "Terrazzo tiles"], ["أوراق متقابلة", "Botanical leaves"], ["رقعة هندسية", "Checker geometry"], ["شبكة ألماس", "Diamond lattice"]],
@@ -49,14 +50,19 @@ export const legacyAssets: Asset[] = utilityCategories.flatMap((c, index) => nam
   tags: [c.name, c.description, english.toLowerCase(), "واجهة", "web", "svg", variant % 2 === 0 ? "فاتح" : "داكن"],
   palette: (index + variant) % palettes.length, author: "نقش", license: "CC0-1.0",
 })));
-export const originalAssets:Asset[]=[...ornamentAssets,...legacyAssets];
+export const originalAssets:Asset[]=[...ornamentAssets,...tiktokAssets,...legacyAssets];
 const translations:Record<string,string>={home:"منزل الرئيسية",search:"بحث",heart:"قلب مفضلة",account:"حساب مستخدم",user:"مستخدم",arrow:"سهم",calendar:"تقويم",mail:"بريد",message:"رسالة",shopping:"تسوق متجر",cart:"سلة",bag:"حقيبة",settings:"إعدادات",cog:"إعدادات",file:"ملف",folder:"مجلد",cloud:"سحابة",download:"تنزيل",upload:"رفع",phone:"هاتف",bell:"إشعار جرس",alert:"تنبيه",check:"نجاح صح",close:"إغلاق",menu:"قائمة",star:"نجمة",lock:"قفل",eye:"عين رؤية",camera:"كاميرا",photo:"صورة",image:"صورة",book:"كتاب",school:"تعليم مدرسة",brand:"علامة تجارية",code:"كود برمجة",device:"جهاز",wifi:"شبكة اتصال",dots:"نقاط",map:"خريطة",location:"موقع",music:"موسيقى",player:"مشغل",chart:"مخطط",circle:"دائرة",square:"مربع"};
 export const importedAssets:Asset[]=iconRows.map(([prefix,name])=>{const c=iconCollections.find(c=>c.prefix===prefix)!;return {id:`${prefix}-${name}`,name:name.replaceAll("-"," "),english:name.replaceAll("-"," "),category:"icons",variant:0,style:prefix==="tabler"&&!name.includes("filled")?"خطي":"مسطح",tags:["أيقونات","icon",prefix,c.name,...name.split("-").map(word=>translations[word]||word)],palette:0,author:c.author,license:c.license,source:prefix};});
 export const assets:Asset[]=[...originalAssets,...importedAssets];
 export const assetById=new Map(assets.map(a=>[a.id,a]));
 export const categoryCounts=Object.fromEntries(categories.map(c=>[c.id,assets.filter(a=>a.category===c.id).length])) as Record<CategoryId,number>;
-export type GalleryScope="ornaments"|"interface"|"all";
-export function galleryAssets(list:Asset[],scope:GalleryScope){return list.filter(a=>scope==="all"||(scope==="ornaments"?a.ornament:!a.ornament));}
+export type GalleryScope="ornaments"|"tiktok"|"interface"|"all";
+export function galleryAssets(list:Asset[],scope:GalleryScope){
+  if(scope==="all")return list;
+  if(scope==="tiktok")return list.filter(a=>a.category==="tiktok");
+  if(scope==="ornaments")return list.filter(a=>a.ornament&&a.category!=="tiktok");
+  return list.filter(a=>!a.ornament&&a.category!=="tiktok");
+}
 const normalize=(value:string)=>value.toLowerCase().normalize("NFKD").replace(/[\u064B-\u065F]/g,"");
 const searchIndex=new Map(assets.map(a=>[a.id,normalize([a.name,a.english,a.id,...a.tags].join(" "))]));
 export function searchAssets(list: Asset[], query: string, category = "all", favorites?: string[], style = "all") {

@@ -4,6 +4,7 @@ import {sourceSvg,sourceLicense} from "./icon-sources.ts";
 import {svgOpeningTag} from "./xml.ts";
 import {renderOrnament} from "./ornaments.ts";
 import {renderGeometricOrnament,renderGeometricTile} from "./geometric-ornaments.ts";
+import {renderTiktokDesign} from "./tiktok-designs.ts";
 export type SvgOptions = { primary: string; accent: string; background: string; width: number; height: number; density: number; stroke: number; transparent: boolean; animate: boolean };
 export const defaultOptions: SvgOptions = { primary: "#28634e", accent: "#b9ce82", background: "#f3f0e6", width: 640, height: 480, density: 6, stroke: 5, transparent: false, animate: true };
 export function assetOptions(asset: Asset): SvgOptions { const colors = palettes[asset.palette].colors; return { ...defaultOptions, primary: colors[0], accent: colors[1], background: colors[2],transparent:asset.ornament===true,...(asset.construction?{density:4,stroke:2.5}:{} ) }; }
@@ -29,6 +30,7 @@ function symbol(v: number, p: string, a: string, sw: number) {
 }
 export function renderAsset(asset: Asset, raw: SvgOptions = assetOptions(asset)): string {
   if(asset.source){const svg=sourceSvg(asset.id);if(!svg)throw new Error("الرسم لم يُحمّل بعد");return renderSourceAsset(asset,svg,raw);}
+  if(asset.category==="tiktok")return renderTiktokDesign(asset,normalizeOptions(raw));
   if(asset.construction)return renderGeometricOrnament(asset,normalizeOptions(raw));
   if(asset.ornament)return renderOrnament(asset,normalizeOptions(raw));
   const o = normalizeOptions(raw), p = o.primary, a = o.accent, b = o.background, v = asset.variant;
