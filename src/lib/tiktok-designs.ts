@@ -136,7 +136,7 @@ export const tiktokAssets: Asset[] = specs.map((spec, variant) => ({
 /** Render a cleaned, vectorized TikTok CNC design using the active palette options. */
 export function renderTiktokDesign(asset: Asset, o: SvgOptions): string {
   const entry = tracedTikTokData[asset.id] || tracedTikTokData["tiktok-1"];
-  const bg = o.transparent ? "" : `<rect x="0" y="0" width="640" height="480" fill="${o.background}"/>`;
+  const bg = o.transparent ? "" : `<rect x="0" y="0" width="1920" height="1440" fill="${o.background}"/>`;
   const primary = `<path d="${entry.primaryPath}" fill="${o.primary}" fill-rule="evenodd"/>`;
   let layers = primary;
   if (entry.accentPath) {
@@ -146,5 +146,5 @@ export function renderTiktokDesign(asset: Asset, o: SvgOptions): string {
       layers = `${primary}<path d="${entry.accentPath}" fill="${o.accent}" fill-rule="evenodd"/>`;
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${o.width}" height="${o.height}" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid meet" role="img"><title>${asset.name}</title><desc>Naqsh TikTok CNC &amp; laser-cut SVG vector vectorized from @hathanhcncvemau. CC0-1.0. ${asset.english}.</desc>${bg}${layers}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${o.width}" height="${o.height}" viewBox="0 0 1920 1440" preserveAspectRatio="xMidYMid meet" role="img"><title>${asset.name}</title><desc>Naqsh TikTok CNC &amp; laser-cut SVG vector vectorized from @hathanhcncvemau. CC0-1.0. ${asset.english}.</desc>${bg}${layers}</svg>`;
 }

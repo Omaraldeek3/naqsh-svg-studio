@@ -45,7 +45,7 @@ test("tiktok CNC designs render valid unique SVGs and are discoverable in their 
     const svg=renderAsset(asset,{...defaultOptions,transparent:true});
     assert.doesNotMatch(svg,/NaN|Infinity|undefined/);
     assert.match(svg,/<path|<rect|<circle|<polygon|<line/);
-    assert.doesNotMatch(svg,/<rect x="0" y="0" width="640" height="480"/);
+    assert.doesNotMatch(svg,/<rect x="0" y="0" width="(640|1920)" height="(480|1440)"/);
   }
 });
 test("connected geometric patterns and ribbons export self-contained repeat tiles",()=>{
