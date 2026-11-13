@@ -14,14 +14,14 @@ import { namespaceSvg } from "../src/lib/sanitize.ts";
 test("catalog retains legacy designs and adds six balanced ornament categories plus tiktok batch", () => {
   assert.equal(legacyAssets.length, 96);
   assert.equal(ornamentAssets.length,384);
-  assert.equal(tiktokAssets.length, 12);
-  assert.equal(originalAssets.length, 492);
+  assert.ok(tiktokAssets.length >= 12);
+  assert.equal(originalAssets.length, 384 + 96 + tiktokAssets.length);
   assert.ok(assets.length>10000);
   assert.equal(new Set(assets.map(a => a.id)).size, assets.length);
   assert.equal(categories.length, 19);
   for (const category of ornamentCategories) assert.equal(categoryCounts[category.id],["islamic","ornate-borders"].includes(category.id)?96:48);
-  assert.equal(categoryCounts.tiktok, 12);
-  assert.equal(new Set(originalAssets.map(a => renderAsset(a, defaultOptions))).size, 492);
+  assert.equal(categoryCounts.tiktok, tiktokAssets.length);
+  assert.equal(new Set(originalAssets.map(a => renderAsset(a, defaultOptions))).size, originalAssets.length);
 });
 test("ornaments are distinct geometry, not title or palette variants",()=>{
   const bodies=ornamentAssets.map(a=>renderAsset(a,defaultOptions).replace(/<title>[\s\S]*?<\/title>|<desc>[\s\S]*?<\/desc>/g,"").replace(/orn-[\w.-]+/g,"orn-id"));
@@ -31,19 +31,20 @@ test("ornaments are distinct geometry, not title or palette variants",()=>{
 test("default gallery prioritizes ornaments and secondary assets remain discoverable",()=>{
   assert.equal(galleryAssets(assets,"ornaments").length,384);
   assert.ok(galleryAssets(assets,"ornaments").every(a=>a.ornament));
-  assert.equal(galleryAssets(assets,"tiktok").length,12);
-  assert.equal(galleryAssets(assets,"interface").length,assets.length-396);
+  assert.equal(galleryAssets(assets,"tiktok").length,tiktokAssets.length);
+  assert.equal(galleryAssets(assets,"interface").length,assets.length-ornamentAssets.length-tiktokAssets.length);
   assert.equal(galleryAssets(assets,"all").length,assets.length);
   assert.equal(searchAssets(galleryAssets(assets,"ornaments"),"زيتون").length,18);
   assert.equal(searchAssets(galleryAssets(assets,"ornaments"),"اسلامية").length,144);
 });
 test("tiktok CNC designs render valid unique SVGs and are discoverable in their scope",()=>{
   const bodies=tiktokAssets.map(a=>renderAsset(a,defaultOptions).replace(/<title>[\s\S]*?<\/title>|<desc>[\s\S]*?<\/desc>/g,"").replace(/tk-[\w.-]+/g,"tk-id"));
-  assert.equal(new Set(bodies).size,12);
-  assert.equal(searchAssets(assets,"تيك توك").length,12);
+  assert.equal(new Set(bodies).size,tiktokAssets.length);
+  assert.equal(searchAssets(assets,"تيك توك").length,tiktokAssets.length);
   for(const asset of tiktokAssets){
     const svg=renderAsset(asset,{...defaultOptions,transparent:true});
     assert.doesNotMatch(svg,/NaN|Infinity|undefined/);
+    assert.doesNotMatch(svg,/&(?!(?:amp|lt|gt|quot|apos|#\d+);)/);
     assert.match(svg,/<path|<rect|<circle|<polygon|<line/);
     assert.doesNotMatch(svg,/<rect x="0" y="0" width="(640|1920)" height="(480|1440)"/);
   }

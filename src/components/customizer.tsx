@@ -3,14 +3,16 @@ import {useEffect,useRef,useState} from "react";
 import {type Asset,palettes} from "../lib/catalog";
 import {assetOptions,renderAsset,renderRepeatTile,type SvgOptions} from "../lib/svg";
 import {copyText,downloadPng,downloadText,toCss,toReact} from "../lib/export";
+import {hasTiktokData,loadTiktokData} from "../lib/tiktok-designs";
 import {Art} from "./art";
 import {Icon} from "./icon";
 
 export function Customizer({asset,brand,onClose,onAdd,onFavorite,favorite,notify}:{asset:Asset;brand:string[]|null;onClose:()=>void;onAdd:(a:Asset,o:SvgOptions)=>void;onFavorite:()=>void;favorite:boolean;notify:(s:string)=>void}) {
   const dialog=useRef<HTMLDialogElement>(null);
   const [options,setOptions]=useState<SvgOptions>(()=>({...assetOptions(asset),...(brand?{primary:brand[0],accent:brand[1],background:brand[2]}:{})}));
-  const [surface,setSurface]=useState("light"),[context,setContext]=useState(false),[format,setFormat]=useState("svg"),[busy,setBusy]=useState(false);
+  const [surface,setSurface]=useState("light"),[context,setContext]=useState(false),[format,setFormat]=useState("svg"),[busy,setBusy]=useState(false),[,setTiktokTick]=useState(0);
   useEffect(()=>{dialog.current?.showModal();},[]);
+  useEffect(()=>{let active=true;if(asset.category==="tiktok"&&!hasTiktokData(asset.id)){loadTiktokData(asset.id).then(()=>{if(active)setTiktokTick(n=>n+1);}).catch(()=>{});}return()=>{active=false;};},[asset.id,asset.category]);
   const tile=asset.construction?renderRepeatTile(asset,options):null;
   const tileBox=tile?/viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(tile):null;
   const tileWidth=Number(tileBox?.[1]||0),tileHeight=Number(tileBox?.[2]||0);
